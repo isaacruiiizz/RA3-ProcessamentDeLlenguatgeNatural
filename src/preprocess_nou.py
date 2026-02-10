@@ -11,6 +11,10 @@ Metodologia B (spaCy - ca_core_news_sm):
 - Tokenització intel·ligent
 - Eliminació de stopwords (diccionari oficial spaCy català)
 - Lematització (millora extra)
+
+SORTIDES:
+- articles_preprocessats_A_python.csv
+- articles_preprocessats_B_spacy.csv
 """
 
 from __future__ import annotations
@@ -55,21 +59,15 @@ def preprocess_python_standard(text: str) -> List[str]:
     - eliminar puntuació
     - tokenització simple: split
     """
-    # 1) Minúscules
     text = (text or "").lower()
 
-    # 2) Treure puntuació bàsica
     # Afegim alguns signes típics catalans/periodístics a més de string.punctuation
     extra_punct = "“”«»…–—·’"
     trans_table = str.maketrans("", "", string.punctuation + extra_punct)
     text = text.translate(trans_table)
 
-    # 3) Tokenització simple
     tokens = text.split()
-
-    # (Opcional però útil) Treure tokens buits i números sols
     tokens = [t for t in tokens if t.strip() and not t.isdigit()]
-
     return tokens
 
 
@@ -117,26 +115,8 @@ def preprocess_spacy_advanced(nlp, text: str) -> List[str]:
 
 
 # -----------------------------
-# COMPARATIVA
+# MAIN
 # -----------------------------
-def compare_for_row(nlp, title: str, article: str) -> Dict[str, str]:
-    full_text = join_title_article(title, article)
-
-    tokens_a = preprocess_python_standard(full_text)
-    tokens_b = preprocess_spacy_advanced(nlp, full_text)
-
-    return {
-        "text_len_chars": str(len(full_text)),
-        "n_tokens_A_python": str(len(tokens_a)),
-        "n_tokens_B_spacy": str(len(tokens_b)),
-        "exemple_20_tokens_A": " ".join(tokens_a[:20]),
-        "exemple_20_tokens_B": " ".join(tokens_b[:20]),
-        # per si després ho vols per BoW/embeddings
-        "tokens_A_python": " ".join(tokens_a),
-        "tokens_B_spacy": " ".join(tokens_b),
-    }
-
-
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -145,9 +125,9 @@ def main() -> int:
         help="CSV d'entrada amb: fitxer,titol,text_original",
     )
     parser.add_argument(
-        "--output",
-        default=os.path.join("data", "processed", "articles_preprocessats_pas2.csv"),
-        help="CSV de sortida (PAS 2) amb comparativa A vs B",
+        "--out_dir",
+        default=os.path.join("data", "processed"),
+        help="Carpeta de sortida",
     )
     args = parser.parse_args()
 
@@ -160,45 +140,62 @@ def main() -> int:
     if missing:
         raise RuntimeError(f"Falten columnes al CSV: {missing} (calen {required})")
 
-    # spaCy nlp una sola vegada
+    # Carreguem spaCy 1 cop
     nlp = load_spacy("ca_core_news_sm")
 
-    out = []
+    out_a = []
+    out_b = []
+
     for r in rows:
-        comp = compare_for_row(nlp, r.get("titol", ""), r.get("text_original", ""))
-        out.append({
-            "fitxer": r.get("fitxer", ""),
-            "titol": r.get("titol", ""),
-            "text_original": r.get("text_original", ""),
-            **comp
+        fitxer = r.get("fitxer", "")
+        titol = r.get("titol", "")
+        text_original = r.get("text_original", "")
+        full_text = join_title_article(titol, text_original)
+
+        # A) Python Standard
+        tokens_a = preprocess_python_standard(full_text)
+        out_a.append({
+            "fitxer": fitxer,
+            "titol": titol,
+            "text_original": text_original,
+            "text_len_chars": len(full_text),
+            "n_tokens": len(tokens_a),
+            "exemple_20_tokens": " ".join(tokens_a[:20]),
+            "tokens": " ".join(tokens_a),
         })
 
-    fieldnames = [
-        "fitxer",
-        "titol",
-        "text_original",
-        "text_len_chars",
-        "n_tokens_A_python",
-        "n_tokens_B_spacy",
-        "exemple_20_tokens_A",
-        "exemple_20_tokens_B",
-        "tokens_A_python",
-        "tokens_B_spacy",
-    ]
+        # B) spaCy
+        tokens_b = preprocess_spacy_advanced(nlp, full_text)
+        out_b.append({
+            "fitxer": fitxer,
+            "titol": titol,
+            "text_original": text_original,
+            "text_len_chars": len(full_text),
+            "n_tokens": len(tokens_b),
+            "exemple_20_tokens": " ".join(tokens_b[:20]),
+            "tokens": " ".join(tokens_b),
+        })
 
-    write_csv_dicts(args.output, out, fieldnames)
+    # Guardem CSV A
+    out_path_a = os.path.join(args.out_dir, "articles_preprocessats_A_python.csv")
+    fieldnames = ["fitxer", "titol", "text_original", "text_len_chars", "n_tokens", "exemple_20_tokens", "tokens"]
+    write_csv_dicts(out_path_a, out_a, fieldnames)
 
-    # Sortida per consola (captura “EXECUCIÓ MAIN.PY”)
-    print(f"[OK] PAS 2 completat. Articles processats: {len(out)}")
-    print(f"[OK] Fitxer sortida: {args.output}\n")
+    # Guardem CSV B
+    out_path_b = os.path.join(args.out_dir, "articles_preprocessats_B_spacy.csv")
+    write_csv_dicts(out_path_b, out_b, fieldnames)
 
-    first = out[0]
-    print("=== COMPARATIVA (primer registre) ===")
-    print("Fitxer:", first["fitxer"])
-    print("Tokens A (Python):", first["n_tokens_A_python"])
-    print("Tokens B (spaCy):", first["n_tokens_B_spacy"])
-    print("Exemple A:", first["exemple_20_tokens_A"])
-    print("Exemple B:", first["exemple_20_tokens_B"])
+    # Sortida per fer captura
+    print(f"[OK] PAS 2 completat. Articles processats: {len(rows)}")
+    print(f"[OK] CSV Metodologia A (Python): {out_path_a}")
+    print(f"[OK] CSV Metodologia B (spaCy):  {out_path_b}\n")
+
+    print("=== EXEMPLE (primer registre) ===")
+    print("Fitxer:", out_a[0]["fitxer"])
+    print("A) n_tokens:", out_a[0]["n_tokens"])
+    print("A) exemple:", out_a[0]["exemple_20_tokens"])
+    print("B) n_tokens:", out_b[0]["n_tokens"])
+    print("B) exemple:", out_b[0]["exemple_20_tokens"])
 
     return 0
 
