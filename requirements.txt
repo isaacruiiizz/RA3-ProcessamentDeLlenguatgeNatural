@@ -1,0 +1,20 @@
+# Processament de dades i càlcul numèric
+pandas
+numpy
+
+# Pas 1: Scraping i processament HTML
+beautifulsoup4
+
+# Pas 2: Preprocessament lingüístic
+spacy
+# Nota: Cal descarregar el model amb: python -m spacy download ca_core_news_sm
+
+# Pas 3: Vectorització i Similitud
+scikit-learn
+sentence-transformers
+
+# Pas 4: Models de resum de HuggingFace
+transformers
+torch
+sentencepiece
+protobuf
