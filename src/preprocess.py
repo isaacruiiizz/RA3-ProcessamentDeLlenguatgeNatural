@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 PAS 2: PREPROCESSAMENT DEL TEXT
 
@@ -25,10 +24,7 @@ import string
 import argparse
 from typing import List, Dict
 
-
-# -----------------------------
-# I/O CSV
-# -----------------------------
+# FUNCIONS AUXILIARS
 def read_csv_dicts(path: str) -> List[Dict[str, str]]:
     with open(path, "r", encoding="utf-8", newline="") as f:
         return list(csv.DictReader(f))
@@ -49,10 +45,7 @@ def join_title_article(title: str, text: str) -> str:
         return f"{title}. {text}"
     return title or text
 
-
-# -----------------------------
 # METODOLOGIA A — PYTHON STANDARD
-# -----------------------------
 def preprocess_python_standard(text: str) -> List[str]:
     """
     - lower()
@@ -70,10 +63,7 @@ def preprocess_python_standard(text: str) -> List[str]:
     tokens = [t for t in tokens if t.strip() and not t.isdigit()]
     return tokens
 
-
-# -----------------------------
 # METODOLOGIA B — SPACY AVANÇAT
-# -----------------------------
 def load_spacy(model_name: str = "ca_core_news_sm"):
     try:
         import spacy
@@ -88,7 +78,7 @@ def load_spacy(model_name: str = "ca_core_news_sm"):
             f"Prova: python -m spacy download {model_name}"
         ) from e
 
-
+# PAS 2: PREPROCESSAMENT DEL TEXT
 def preprocess_spacy_advanced(nlp, text: str) -> List[str]:
     """
     - tokenització intel·ligent
@@ -113,10 +103,7 @@ def preprocess_spacy_advanced(nlp, text: str) -> List[str]:
 
     return tokens
 
-
-# -----------------------------
 # MAIN
-# -----------------------------
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -185,7 +172,6 @@ def main() -> int:
     out_path_b = os.path.join(args.out_dir, "articles_preprocessats_B_spacy.csv")
     write_csv_dicts(out_path_b, out_b, fieldnames)
 
-    # Sortida per fer captura
     print(f"[OK] PAS 2 completat. Articles processats: {len(rows)}")
     print(f"[OK] CSV Metodologia A (Python): {out_path_a}")
     print(f"[OK] CSV Metodologia B (spaCy):  {out_path_b}\n")
@@ -198,7 +184,6 @@ def main() -> int:
     print("B) exemple:", out_b[0]["exemple_20_tokens"])
 
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

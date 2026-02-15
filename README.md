@@ -18,9 +18,9 @@ El repositori s'organitza de la següent manera per garantir la reproductibilita
 │   └── raw/                # Conté els 5 fitxers .html originals per a les proves
 │   └── processed/          # Conté els fitxers ja netejats
 ├── src/                    # Codi font principal
-│   ├── main.py             # Script principal per executar tot el pipeline
 │   ├── scraper.py          # Pas 1: Extracció de text des d'HTML
 │   ├── preprocess.py       # Pas 2: Tokenització i neteja (NLTK/SpaCy)
-│   └── models.py           # Pas 3 i 4: Vectorització i models de HuggingFace
+│   ├── BTF.py              # Pas 3: Identificació del tema de l'article
+│   └── resums.py           # Pas 4: Generació de resums
 ├── requirements.txt        # Llibreries necessàries per executar el projecte
 └── README.md               # Documentació general

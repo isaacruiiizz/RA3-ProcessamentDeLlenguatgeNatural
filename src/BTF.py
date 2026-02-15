@@ -1,24 +1,16 @@
-# -*- coding: utf-8 -*-
 """
 PAS 3: Identificació del tema de l'article (4 punts)
 
 - Solució 1: Bag of Words (BoW)
 - Solució 2: TF-IDF
-- Solució 3 (obligatòria): Embeddings amb HuggingFace (sense fine-tuning)
-  -> Similaritat coseno entre articles
-
-Entrada recomanada: data/processed/articles_preprocessats_B_spacy.csv
-Columna usada com a text: "tokens"
+- Solució 3: Embeddings amb HuggingFace (sense fine-tuning)
 """
 
 import os
 import pandas as pd
-
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-
 from sentence_transformers import SentenceTransformer
-
 
 INPUT_CSV = os.path.join("data", "processed", "articles_preprocessats_B_spacy.csv")
 OUT_DIR = os.path.join("data", "processed")
@@ -28,7 +20,6 @@ TFIDF_OUT = os.path.join(OUT_DIR, "pas3_tfidf_top_terms.csv")
 SIM_OUT = os.path.join(OUT_DIR, "pas3_hf_similarity.csv")
 
 TOP_N = 12
-
 
 def top_terms_from_vector(vec, feature_names, top_n=10):
     """Retorna top terms d'un vector (1D)"""
@@ -42,18 +33,16 @@ def main():
 
     df = pd.read_csv(INPUT_CSV)
     if "tokens" not in df.columns:
-        raise RuntimeError("El CSV no té la columna 'tokens'. Revisa el PAS 2 o adapta el nom.")
+        raise RuntimeError("El CSV no té la columna 'tokens'.")
 
-    # Texts (ja preprocessats)
+    # Texts
     texts = df["tokens"].fillna("").astype(str).tolist()
 
-    # Etiqueta del document (fitxer o titol)
+    # Etiqueta del document
     label_col = "fitxer" if "fitxer" in df.columns else "titol"
     labels = df[label_col].fillna("").astype(str).tolist()
 
-    # -------------------------
     # 1) BAG OF WORDS
-    # -------------------------
     bow = CountVectorizer()
     X_bow = bow.fit_transform(texts)
     bow_features = bow.get_feature_names_out()
@@ -70,9 +59,7 @@ def main():
     pd.DataFrame(bow_rows).to_csv(BOW_OUT, index=False, encoding="utf-8")
     print(f"[OK] BoW guardat a: {BOW_OUT}")
 
-    # -------------------------
     # 2) TF-IDF
-    # -------------------------
     tfidf = TfidfVectorizer()
     X_tfidf = tfidf.fit_transform(texts)
     tfidf_features = tfidf.get_feature_names_out()
@@ -89,9 +76,7 @@ def main():
     pd.DataFrame(tfidf_rows).to_csv(TFIDF_OUT, index=False, encoding="utf-8")
     print(f"[OK] TF-IDF guardat a: {TFIDF_OUT}")
 
-    # -------------------------
     # 3) HUGGINGFACE EMBEDDINGS (sense fine-tuning)
-    # -------------------------
     model_name = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
     model = SentenceTransformer(model_name)
 
@@ -112,10 +97,8 @@ def main():
     sim_df.to_csv(SIM_OUT, index=False, encoding="utf-8")
     print(f"[OK] Similaritats HF guardades a: {SIM_OUT}")
 
-    # Mostra ràpida per fer captura terminal
     print("\n=== TOP 5 similaritats (HuggingFace) ===")
     print(sim_df.head(5).to_string(index=False))
-
 
 if __name__ == "__main__":
     main()
